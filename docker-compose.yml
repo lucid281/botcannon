@@ -1,0 +1,28 @@
+version: '3.4'
+
+services:
+  worker:
+    command: ./botcannon worker botcannon-demo
+    build: dockerbuild/cannon/.
+    volumes:
+      - ./bots:/home/developer/bots:ro
+      - ./sockets/:/run/redis/:rw
+      - ./dockerbuild/cannon/botcannon/botcannon:/usr/src/botcannon:ro
+    depends_on:
+      - redis
+
+  runner:
+    command: ./botcannon run-runner botcannon-demo
+    build: dockerbuild/cannon/.
+    volumes:
+      - ./bots:/home/developer/bots:ro
+      - ./sockets/:/run/redis/:rw
+      - ./dockerbuild/cannon/botcannon/botcannon:/usr/src/botcannon:ro
+    depends_on:
+      - redis
+
+  redis:
+    build: dockerbuild/redis/.
+    volumes:
+      - ./db:/data/redis:rw
+      - ./sockets/:/run/redis/:rw

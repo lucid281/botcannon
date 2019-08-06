@@ -1,0 +1,5 @@
+
+[submodule "dockerbuild/cannon/botcannon"]
+	path = dockerbuild/cannon/botcannon
+	url = git@github.com:lucid281/botcannon-source.git
+	branch = master
