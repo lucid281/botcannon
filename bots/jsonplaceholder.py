@@ -48,6 +48,8 @@ class JsonTestBot:
         }
 
         self.users = Users(self)
+        self.comments = Comments(self)
+        self.posts = Posts(self)
         self._hidden = None
 
 
@@ -112,6 +114,89 @@ class User:
 
             # set the method
             setattr(self, endpoint, get)  # < do not call () ! you want the function, not the result of the function
+
+
+
+class Post:
+    def __init__(self, post_json, bot):
+        # bot serves as session handling and app structure, the _ hides it from fire/torch
+        self._b = bot
+
+        # assign post_json fields as attrs to this class
+        for attr in post_json:
+            setattr(self, attr, post_json[attr])
+
+        # assign methods with names from bot.endpoints to a generated function
+        for endpoint in ["posts", "comments", "comments", "albums", "todos"]:
+            # this is unique per iteration, create a new instance for the function
+            url = self._b.endpoints[endpoint]
+
+            # generate the function
+            def get():
+                # we are making the assumption that self.id exists from above.
+                return self._b.r.get(url, params={'postId': self.id}).json()
+
+            # set the method
+            setattr(self, endpoint, get)
+
+
+class Posts:
+    """
+    Uses JsonTestBot to perform tasks with /posts
+    """
+    def __init__(self, bot):
+        self._b = bot
+
+    def by_id(self, id):
+        """Get a Post object by id"""
+        post_json = self._b.r.get(self._b.endpoints['posts'], params=str(id)).json()[0]
+        return Post(post_json, self._b)
+
+
+class Comment:
+    def __init__(self, comment_json, bot):
+        # bot serves as session handling and app structure, the _ hides it from fire/torch
+        self._b = bot
+
+        # assign comment_json fields as attrs to this class
+        for attr in comment_json:
+            setattr(self, attr, comment_json[attr])
+
+        # assign methods with names from bot.endpoints to a generated function
+        for endpoint in ["posts", "comments", "comments", "albums", "todos"]:
+            # this is unique per iteration, create a new instance for the function
+            url = self._b.endpoints[endpoint]
+
+            # generate the function
+            def get():
+                # we are making the assumption that self.id exists from above.
+                return self._b.r.get(url, params={'commentId': self.id}).json()
+
+            # set the method
+            setattr(self, endpoint, get)
+
+
+class Comments:
+    def __init__(self, bot):
+        self._b = bot
+
+    def all(self):
+        """Get all comments by postId as a dict"""
+        return {i['postId']: i for i in self._b.r.get(self._b.endpoints['comments']).json()}
+
+    def by_post_id(self, postid):
+        comments = self.all()
+
+        if postid in comments:
+            return Comment(comments[postid], self._b)
+        else:
+            return 'No comment for specific post found.'
+
+    def by_id(self, id):
+        """Get a Comment object by id"""
+        comment_json = self._b.r.get(self._b.endpoints['comments'], params=str(id)).json()[0]
+        return Comment(comment_json, self._b)
+
 
 
 # _entrypoint_ is the name of the root class botcannon and will load using
