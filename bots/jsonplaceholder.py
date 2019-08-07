@@ -149,7 +149,8 @@ class Posts:
 
     def by_id(self, id):
         """Get a Post object by id"""
-        post_json = self._b.r.get(self._b.endpoints['posts'], params=str(id)).json()[0]
+        post_json = self._b.r.get(f'{self._b.endpoints["posts"]}/{id}').json()
+
         return Post(post_json, self._b)
 
 
