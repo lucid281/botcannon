@@ -103,7 +103,7 @@ class User:
             setattr(self, attr, user_json[attr])
 
         # assign methods with names from bot.endpoints to a generated function
-        for endpoint in ["posts", "comments", "comments", "albums", "todos"]:
+        for endpoint in ["posts", "comments", "albums", "todos"]:
             # this is unique per iteration, create a new instance for the function
             url = self._b.endpoints[endpoint]
 
@@ -127,7 +127,7 @@ class Post:
             setattr(self, attr, post_json[attr])
 
         # assign methods with names from bot.endpoints to a generated function
-        for endpoint in ["posts", "comments", "comments", "albums", "todos"]:
+        for endpoint in ["users", "comments"]:
             # this is unique per iteration, create a new instance for the function
             url = self._b.endpoints[endpoint]
 
@@ -164,7 +164,7 @@ class Comment:
             setattr(self, attr, comment_json[attr])
 
         # assign methods with names from bot.endpoints to a generated function
-        for endpoint in ["posts", "comments", "comments", "albums", "todos"]:
+        for endpoint in ["posts", "users"]:
             # this is unique per iteration, create a new instance for the function
             url = self._b.endpoints[endpoint]
 
