@@ -29,7 +29,7 @@ mybot APP 13:37
                rand
 ```
 ```
-User Name:
+User Name 13:37
   @mybot rand
 ```
 ```
@@ -42,21 +42,9 @@ this repo is for the docker-compose component of botcannon and is to be used as 
 
 botcannon's source (included as a submodule) is located here: https://github.com/lucid281/botcannon-source.
 
-#### new repo from git clone
-if you cloned this repo instead of using github's template feature, you have to rm git's db and  the botcannon submodule dir. then init and add botcannon as a submodule to your new custom repo:
-```
-[in cloned botcannon dir]
-rm -rf .git
-rm -rf dockerbuild/cannon/botcannon
-git init
-git submodule add git@github.com:lucid281/botcannon-source dockerbuild/cannon/botcannon
-```
-then to add your repo to your github:
-https://help.github.com/en/articles/adding-an-existing-project-to-github-using-the-command-line
-
 
 ## dependencies
-for docker: docker, docker-compose 
+for docker-compose: docker, docker-compose 
 
 for bare metal: python 3.5+, and redis
 
@@ -77,9 +65,6 @@ where MYBOTS is your new repo dir name.
 git clone --recursive git@github.com:lucid281/botcannon.git MYBOTS
 cd MYBOTS
 pip install --user dockerbuild/cannon/botcannon/requirements.txt
-export PYTHONPATH=PATH_TO_REPO_DIR/botcannon:$PYTHONPATH
-# assuming redis is up...
-python -m botcannon
 ```
 baremetal can be easier for dev or certain deployments. redis or botcannon processes can run on hardware or in docker. redis 5 is required (streams).
 
@@ -92,6 +77,24 @@ python has trouble loading botcannon from the `dockerbuild` path, so you can add
 ... and `python -m botcannon` should work as the `./botcannon` script in the cannon container.
 
 >botcannon is configured to run with `/run/redis/redis-server.sock`. if that is missing the cli will look to `sockets/redis-server.sock` in your PWD, allowing you to plug into the redis instance without a new container. useful for accessing multiple instances on the same host. 
+
+## using repo as a template
+#### clone or use github template feature
+if you cloned this repo instead of using github's template feature, you have to rm git's db and  the botcannon submodule dir. then init and add botcannon as a submodule to your new custom repo.
+```
+[in cloned botcannon dir]
+rm -rf .git
+rm -rf dockerbuild/cannon/botcannon
+git init
+```
+then add the submodule (everbody!)...
+#### add submodule
+template users: github does not take the submodule with it! run this
+```
+git submodule add git@github.com:lucid281/botcannon-source dockerbuild/cannon/botcannon
+```
+##### add your new repo to your github
+https://help.github.com/en/articles/adding-an-existing-project-to-github-using-the-command-line
 
 
 # configure the demo
