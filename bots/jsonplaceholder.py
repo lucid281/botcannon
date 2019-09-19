@@ -15,6 +15,7 @@ only the results of the attribute call chain from fire return to a bot.
 
 """
 import requests
+import json
 
 
 class JsonTestBot:
@@ -35,83 +36,128 @@ class JsonTestBot:
     Each attribute is exposed as a command to the bot, but can be hidden from the user by prepending _
     """
     def __init__(self, base_url):
-        # base_url = 'https://jsonplaceholder.typicode.com'
+        base_url = 'https://app.rainforestqa.com/api/1'
         self.r = requests.Session()
-        self.r.headers['Content-type'] = 'application/json'
+        self.r.headers['Accept'] = 'application/json'
+        self.r.headers['CLIENT_TOKEN'] = ''
         self.endpoints = {
-            'posts': f'{base_url}/posts',
-            'comments': f'{base_url}/comments',
-            'albums': f'{base_url}/albums',
-            'photos': f'{base_url}/photos',
-            'todos': f'{base_url}/todos',
-            'users': f'{base_url}/users',
+            'runGroups': f'{base_url}/run_groups',
+            'runs': f'{base_url}/runs',
+            'runsInProgress': f'{base_url}/runs?state=in_progress'
         }
 
-        self.users = Users(self)
+        self.runGroups = RunGroups(self)
+        self.runs = Runs(self)
         self._hidden = None
 
 
-class Users:
-    """
-    Uses JsonTestBot to perform tasks with /users
+class RunGroups:
 
-    It's important to be mindful of the calls you make to a REST api as a chatbot.
-    We could, unwisely get all users during __init__ but we don't don't need to for by_id.
-    by_name is bad on purpose, we have could queried the api...
-    ...but it was an opportunity to make a point...don't slow your bots down!!
-    """
     def __init__(self, bot):
         self._b = bot
 
     def all(self):
-        """Get all users by username as a dict"""
-        return {i['username']: i for i in self._b.r.get(self._b.endpoints['users']).json()}
+        """Get all run groups by title(group name) as a dict"""
+        return {i["title"]: i for i in self._b.r.get(self._b.endpoints['runGroups']+"?page=1&page_size=100").json()}
 
-    def by_name(self, username):
-        """Get a User object with username by getting all users"""
-        users = self.all()
-        if username in users:
-            return User(users[username], self._b)
-        else:
-            return 'No user found.'
+    def names(self):
+        result = []
+        groups = self.all()
+        for key in groups:
+            item = groups[key]
+            name = "(" + str(item["id"]) + ")  " + key
+            result.append(name)
+        return "\n".join(result)
 
-    def by_id(self, id):
-        """Get a User object by id"""
-        user_json = self._b.r.get(self._b.endpoints['users'], params=str(id)).json()[0]
-        return User(user_json, self._b)
+    def by_id(self, group_id):
+        groups = self.all()
+        for key in groups:
+            item = groups[key]
+            if item["id"] == group_id:
+                return key
+        return "no id matched"
+
+    def start(self, group_id):
+        print("group id: ", group_id)
+        """Get a Run Group object by id"""
+        url = self._b.endpoints['runGroups']+"/"+str(group_id)+"/runs"
+        group_key = self.by_id(group_id)
+        if group_key == "no id matched":
+            return "Group is invalid"
+
+        payload = {"description": group_key}
+        group_json = self._b.r.post(url, data=json.dumps(payload)).json()
+        return "Started run group: " + group_json["description"]
 
 
-class User:
-    """
-    User inherits the keys values pairs from user_json as attributes.
+class RunGroup:
 
-    Then, using our instance of JsonTestBot (bot) we create methods dynamically
-    from bot.endpoints that pertain to our User. In this case I saved myself from
-    writing 4 additional methods for each category.
-
-    Look for common ground!
-    In this case the endpoint is the only thing that changes in the request. Ripe for meta.
-    """
-    def __init__(self, user_json, bot):
+    def __init__(self, group_json, bot):
         # bot serves as session handling and app structure, the _ hides it from fire/torch
         self._b = bot
 
-        # assign user_json fields as attrs to this class
-        for attr in user_json:
-            setattr(self, attr, user_json[attr])
+        # assign group_json fields as attrs to this class
+        for attr in group_json:
+            setattr(self, attr, group_json[attr])
 
         # assign methods with names from bot.endpoints to a generated function
-        for endpoint in ["posts", "comments", "comments", "albums", "todos"]:
+        for endpoint in ["runs"]:
             # this is unique per iteration, create a new instance for the function
             url = self._b.endpoints[endpoint]
 
             # generate the function
             def get():
                 # we are making the assumption that self.id exists from above.
-                return self._b.r.get(url, params={'userId': self.id}).json()
+                return self._b.r.get(url, params={'run_group_id': self.id}).json()
 
             # set the method
             setattr(self, endpoint, get)  # < do not call () ! you want the function, not the result of the function
+
+
+class Runs:
+    def __init__(self, bot):
+        self._b = bot
+
+    def all(self):
+        return {i['title']: i for i in self._b.r.get(self._b.endpoints['runs']).json()}
+
+    def in_progress(self):
+        return {i['description']: i for i in self._b.r.get(self._b.endpoints['runsInProgress']).json()}
+
+    def status(self):
+        in_progress_runs = self.in_progress()
+
+        print("####in_progress: ", in_progress_runs)
+        if not in_progress_runs:
+            return "No running tests"
+
+        result = []
+        for key in in_progress_runs:
+            item = in_progress_runs[key]
+            progress = "(" + str(item["id"]) + ")  " + key + ":   " + str(item["current_progress"]["complete"]) + "/" + str(item["current_progress"]["total"]) + "  =>  " + str(item["current_progress"]["percent"]) + "%"
+            result.append(progress)
+
+        return "\n".join(result)
+
+    def stop(self, run_id):
+        result = self._b.r.delete(self._b.endpoints['runs']+"/"+str(run_id)).json()
+        return "Aborted: " + result["description"]
+
+
+class Run:
+    def _init_(self, run_json, bot):
+        self._b = bot
+
+        for attr in run_json:
+            setattr(self, attr, run_json[attr])
+
+        for endpoint in ["runsInProgress"]:
+            url = self._b.endpoints[endpoint]
+
+            def get():
+                return self._b.r.get(url, params={'run_id': self.id}).json()
+
+            setattr(self, endpoint, get)
 
 
 # _entrypoint_ is the name of the root class botcannon and will load using
