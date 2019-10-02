@@ -127,3 +127,6 @@ sockets/redis-server.sock
 *.rdb
 
 .idea/
+
+# config file
+config.json
