@@ -1,5 +1,4 @@
-# Pull base image.
-FROM ubuntu:latest
+FROM python:3.7-buster
 
 ARG redis_ver=5.0.5
 
@@ -9,7 +8,7 @@ RUN \
   apt-get update && \
   apt-get -y upgrade && \
   apt-get install -y build-essential software-properties-common && \
-  apt-get install -y zsh curl git htop man unzip vim wget && \
+  apt-get install -y bash curl git htop man unzip vim wget && \
   rm -rf /var/lib/apt/lists/*
 
 RUN \
@@ -35,7 +34,7 @@ WORKDIR /data/redis
 
 USER 1000
 # Define default command.
- CMD ["redis-server", "/etc/redis.conf", "--protected-mode no"]
+CMD ["redis-server", "/etc/redis.conf", "--protected-mode no"]
 
 # Expose ports.
 EXPOSE 6379
