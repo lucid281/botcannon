@@ -1,23 +1,14 @@
 version: '3.4'
 
 services:
-  worker:
-    command: ./botcannon worker botcannon-demo
+  main:
+    command: ./botcannon
     build: dockerbuild/cannon/.
     volumes:
-      - ./bots:/home/developer/bots:ro
+      - ./app:/home/developer/app:ro
       - ./sockets/:/run/redis/:rw
       - ./dockerbuild/cannon/botcannon/botcannon:/usr/src/botcannon:ro
-    depends_on:
-      - redis
-
-  runner:
-    command: ./botcannon run-runner botcannon-demo
-    build: dockerbuild/cannon/.
-    volumes:
-      - ./bots:/home/developer/bots:ro
-      - ./sockets/:/run/redis/:rw
-      - ./dockerbuild/cannon/botcannon/botcannon:/usr/src/botcannon:ro
+      - /var/run/docker.sock:/var/run/docker.sock:rw
     depends_on:
       - redis
 

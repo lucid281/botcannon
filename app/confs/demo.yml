@@ -1,0 +1,57 @@
+services:
+
+
+  demo-collector:
+    collector:  # required
+      file: demo  # filename no .py
+      entry: CollectorDemo  # class in file
+      conf:
+        key: demo-collect
+        kwargs:
+          room_temp: '1'
+          room_light: '2'
+
+    shell:
+      entry: RoomShell
+      file: roombot
+      conf:
+        key: demo-shell
+        kwargs:
+          service_name: demo-collector
+          room_temp: '1'
+          room_light: '2'
+
+
+  demo-chatbot:
+    collector:
+      file: slack
+      entry: SlackService
+      conf:
+        key: demo-slack
+        kwargs:
+          api_key: '!!SECRET!!'
+#    collector:
+#      lib: rocketchat
+#      entry: RocketChatBot
+#      conf:
+#        key: demo-rocketchat
+#        kwargs:
+#          server: wss://ADDRESS/websocket
+#          user: USER
+#          password: PASSWORD
+    shell:
+      entry: RoomShell
+      file: roombot
+      conf:
+        key: demo-shell
+
+
+    tasks:
+      torch:
+        file: torch
+        entry: Torch
+        conf:
+          key: slack_torch
+          kwargs:
+            in_key: text
+            out_key: text

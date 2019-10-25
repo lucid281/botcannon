@@ -1,0 +1,8 @@
+pymata-aio
+ruamel.yaml
+requests
+python-dateutil
+docker-compose
+docker
+python-meteor
+slackclient==1.3.2
