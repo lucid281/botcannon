@@ -8,7 +8,6 @@ __location__ = os.path.realpath(
 with open(os.path.join(__location__, "config.json"), "r") as f:
     config = json.load(f)
 
-
 class JsonTestBot:
     def __init__(self, base_url):
         base_url = 'https://team.usetrace.com/rpc/app/init'
@@ -78,6 +77,37 @@ class Project:
                 url = self._b.endpoints["project"]+ key + '/execute_all'
                 headers = {"Content-type": "application/json"}
                 project_run = requests.post(url, data=json.dumps(payload), headers=headers)
+
+                result_url = "https://api.usetrace.com/api/results/"+project_run.text+"/xunit"
+
+                i = 0
+                status_code = 404
+                while i < 3000 and status_code == 404:
+                    tmp_result = requests.get(result_url)
+                    content = tmp_result.content.decode("utf-8") 
+                    if "testsuite" in content:
+                        status_code = 200
+                    i+=1
+
+                if status_code == 200:
+                    final_result_url = self._b.endpoints["project"]+ key + '/lastBatchStatus'
+                    final_project_run = requests.get(final_result_url).json()
+                    report = []
+                
+                    if not final_project_run["batch"]:
+                        return "no result yet"
+                    
+                    batch = final_project_run["batch"]
+                    report.append("Name: " + item["name"])
+                    report.append("Id: " + batch["id"])
+                    report.append("Requested: " + str(batch["requested"]))
+                    report.append("Finished: " + str(batch["finished"]))
+                    report.append("Passed: " + str(batch["passed"]))
+                    report.append("Failed: " + str(batch["failed"]))
+                    return "\n".join(report)
+
+                print("project_run")
+                print(project_run)
                 return project_run.text
         
         return "Invalid project name"
