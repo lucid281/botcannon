@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import time
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -19,11 +20,13 @@ class JsonTestBot:
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'en-US,en;q=0.9',
             'User-Agent': config["USER_AGENT"],
+            #'User-Agent': USER_AGENT,
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'Referer': 'https://team.usetrace.com/',
             'X-Requested-With': 'XMLHttpRequest',
             'Connection': 'keep-alive',
             'Cookie': config["COOKIES"]
+            #'Cookie': COOKIES
         }
 
         self.endpoints = {
@@ -83,6 +86,7 @@ class Project:
                 i = 0
                 status_code = 404
                 while i < 3000 and status_code == 404:
+                    time.sleep(3)
                     tmp_result = requests.get(result_url)
                     content = tmp_result.content.decode("utf-8") 
                     if "testsuite" in content:
@@ -144,7 +148,6 @@ class Project:
                 return "\n".join(report)
 
         return "Invalid project name"
-
 
 
 # _entrypoint_ is the name of the root class botcannon and will load using
