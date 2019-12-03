@@ -96,6 +96,7 @@ class Project:
                 if status_code == 200:
                     final_result_url = self._b.endpoints["project"]+ key + '/lastBatchStatus'
                     final_project_run = requests.get(final_result_url).json()
+
                     report = []
                 
                     if not final_project_run["batch"]:
@@ -108,10 +109,25 @@ class Project:
                     report.append("Finished: " + str(batch["finished"]))
                     report.append("Passed: " + str(batch["passed"]))
                     report.append("Failed: " + str(batch["failed"]))
+
+                    if batch["failed"] > 0:
+                        cnt = 1
+
+                        change_url = "https://team.usetrace.com/rpc/project/" + key + "/changes"
+                        change_results = self._b.r.get(change_url).json()
+
+                        for cr in change_results:
+                            if cr["change"] == "broke":
+                                report.append("== Failure #" + str(cnt) + " ==")
+                                cnt = cnt + 1
+                                report.append(cr["traceLabel"])
+                                report.append("Error Message:")
+                                report.append(cr["errorMessage"])
+                                report.append("Error Screenshot:")
+                                report.append(cr["errorScreenshotUrl"])
+
                     return "\n".join(report)
 
-                print("project_run")
-                print(project_run)
                 return project_run.text
         
         return "Invalid project name"
