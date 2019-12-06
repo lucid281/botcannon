@@ -9,6 +9,7 @@ __location__ = os.path.realpath(
 with open(os.path.join(__location__, "config.json"), "r") as f:
     config = json.load(f)
 
+
 class JsonTestBot:
     def __init__(self, base_url):
         base_url = 'https://team.usetrace.com/rpc/app/init'
@@ -103,6 +104,10 @@ class Project:
                         return "no result yet"
                     
                     batch = final_project_run["batch"]
+
+                    if project_run.text != batch["id"]:
+                        return "something went wrong with the test, please try again later"
+
                     report.append("Name: " + item["name"])
                     report.append("Id: " + batch["id"])
                     report.append("Requested: " + str(batch["requested"]))
@@ -113,11 +118,25 @@ class Project:
                     if batch["failed"] > 0:
                         cnt = 1
 
+                        # check browserSessions by batchId
+                        init_data = self._b.r.get(self._b.endpoints["init"]).json()
+
+                        browserSessions = init_data["browserSessions"]
+
+                        # store scriptIds that need to match error message and screenshot
+                        matchResultScripts = []
+
+                        for browserSess in browserSessions:
+                            if "batchId" in browserSess and "hasError" in browserSess and "scriptId" in browserSess:
+                                if browserSess["batchId"] == batch["id"] and browserSess["hasError"]:
+                                    matchResultScripts.append(browserSess["scriptId"])
+
+
                         change_url = "https://team.usetrace.com/rpc/project/" + key + "/changes"
                         change_results = self._b.r.get(change_url).json()
 
                         for cr in change_results:
-                            if cr["change"] == "broke":
+                            if cr["scriptId"] in matchResultScripts and cr["capabilities"]["browserName"] == "chrome":
                                 report.append("== Failure #" + str(cnt) + " ==")
                                 cnt = cnt + 1
                                 report.append(cr["traceLabel"])
@@ -126,6 +145,9 @@ class Project:
                                 report.append("Error Screenshot:")
                                 report.append(cr["errorScreenshotUrl"])
 
+                        if cnt-1 != batch["failed"]:
+                            report.append("== Failed counts not match in report, additional investigation needed")
+                    
                     return "\n".join(report)
 
                 return project_run.text
