@@ -9,7 +9,6 @@ __location__ = os.path.realpath(
 with open(os.path.join(__location__, "config.json"), "r") as f:
     config = json.load(f)
 
-
 class JsonTestBot:
     def __init__(self, base_url):
         base_url = 'https://team.usetrace.com/rpc/app/init'
@@ -123,27 +122,29 @@ class Project:
 
                         browserSessions = init_data["browserSessions"]
 
-                        # store scriptIds that need to match error message and screenshot
-                        matchResultScripts = []
-
                         for browserSess in browserSessions:
-                            if "batchId" in browserSess and "hasError" in browserSess and "scriptId" in browserSess:
-                                if browserSess["batchId"] == batch["id"] and browserSess["hasError"]:
-                                    matchResultScripts.append(browserSess["scriptId"])
+                            if "batchId" in browserSess and "hasError" in browserSess and "scriptId" in browserSess and "projectId" in browserSess:
+                                if browserSess["batchId"] == batch["id"] and browserSess["hasError"] and browserSess["projectId"] == key :
+                                    if "error" in browserSess:
+                                        errorObj = browserSess["error"]
+                                        if "data" in errorObj:
+                                            dataObj = errorObj["data"]
+                                            if "message" in dataObj:
+                                                report.append("== Failure #" + str(cnt) + " ==")
+                                                cnt = cnt + 1
+                                                report.append(browserSess["traceName"])
+                                                report.append("Error Message:")
+                                                report.append(dataObj["message"])
 
+                                                if "hasErrorScreenshot" in browserSess and "errorScreenshot" in browserSess:
+                                                    if browserSess["hasErrorScreenshot"]:
+                                                        errorScreenshotObj = browserSess["errorScreenshot"]
+                                                        if "full" in errorScreenshotObj:
+                                                            fullObj = errorScreenshotObj["full"]
+                                                            if "url" in fullObj:
+                                                                report.append("Error Screenshot:")
+                                                                report.append(fullObj["url"])
 
-                        change_url = "https://team.usetrace.com/rpc/project/" + key + "/changes"
-                        change_results = self._b.r.get(change_url).json()
-
-                        for cr in change_results:
-                            if cr["scriptId"] in matchResultScripts and cr["capabilities"]["browserName"] == "chrome":
-                                report.append("== Failure #" + str(cnt) + " ==")
-                                cnt = cnt + 1
-                                report.append(cr["traceLabel"])
-                                report.append("Error Message:")
-                                report.append(cr["errorMessage"])
-                                report.append("Error Screenshot:")
-                                report.append(cr["errorScreenshotUrl"])
 
                         if cnt-1 != batch["failed"]:
                             report.append("== Failed counts not match in report, additional investigation needed")
